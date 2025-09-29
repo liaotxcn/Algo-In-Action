@@ -1,11 +1,11 @@
-package主干
+package main
 
 import (
-	"BloomFilter/Cuckoo"
 	"context"
 	"fmt"
 	"log"
 	"sync"
+	"testing"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -17,11 +17,11 @@ import (
 // 2. 内存中使用布谷鸟过滤器提高查询性能
 // 3. 读写操作保证线程安全
 type RedisCuckooFilter struct {
-	filter    *Cuckoo.CuckooFilter // 内存布谷鸟过滤器实例
-	redisCli  *redis.Client        // Redis客户端
-	keyPrefix string               // Redis键前缀
-	mu        sync.RWMutex         // 读写锁，保证并发安全
-	stats     FilterStats          // 过滤器统计信息
+	filter    CuckooFilter  // 内存布谷鸟过滤器实例
+	redisCli  *redis.Client // Redis客户端
+	keyPrefix string        // Redis键前缀
+	mu        sync.RWMutex  // 读写锁，保证并发安全
+	stats     FilterStats   // 过滤器统计信息
 }
 
 // FilterStats 记录过滤器的操作统计
@@ -53,10 +53,10 @@ func NewRedisCuckooFilter(capacity uint, falsePositiveRate float64, redisOpts *r
 	rdb.Options().IdleTimeout = 5 * time.Minute // 空闲连接超时时间
 
 	// 初始化内存布谷鸟过滤器
-	cf := Cuckoo.NewCuckooFilter(int(capacity), falsePositiveRate)
+	cf := NewCuckooFilter(int(capacity), falsePositiveRate)
 
 	return &RedisCuckooFilter{
-		filter:    cf,
+		filter:    *cf,
 		redisCli:  rdb,
 		keyPrefix: keyPrefix,
 	}
@@ -70,7 +70,7 @@ func (rcf *RedisCuckooFilter) checkAndExpand() {
 	// 当使用率达到80%时自动扩容
 	if float64(rcf.filter.Count())/float64(rcf.filter.Capacity()) > 0.8 {
 		newCapacity := rcf.filter.Capacity() * 2
-		newFilter := Cuckoo.NewCuckooFilter(newCapacity, rcf.filter.FalsePositiveRate())
+		newFilter := *NewCuckooFilter(newCapacity, rcf.filter.FalsePositiveRate())
 
 		// 重新加载所有数据
 		rcf.loadAllToFilter(newFilter)
@@ -82,7 +82,7 @@ func (rcf *RedisCuckooFilter) checkAndExpand() {
 }
 
 // loadAllToFilter 从Redis加载所有数据到指定过滤器
-func (rcf *RedisCuckooFilter) loadAllToFilter(filter *Cuckoo.CuckooFilter) {
+func (rcf *RedisCuckooFilter) loadAllToFilter(filter CuckooFilter) {
 	ctx := context.Background()
 	keys, _ := rcf.redisCli.Keys(ctx, rcf.keyPrefix+"*").Result()
 
@@ -215,7 +215,7 @@ func (rcf *RedisCuckooFilter) SyncToRedis(ctx context.Context, interval time.Dur
 	}
 }
 
-func main() {
+func TestRedisCuckooFilter(t *testing.T) {
 	// Redis连接配置
 	redisOpts := &redis.Options{
 		Addr:     "localhost:6379",

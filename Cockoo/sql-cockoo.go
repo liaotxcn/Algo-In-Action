@@ -1,11 +1,11 @@
-package主干
+package main
 
 import (
-	"BloomFilter/Cuckoo"
 	"context"
 	"fmt"
 	"log"
 	"sync"
+	"testing"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -22,11 +22,11 @@ type Config struct {
 
 // UserBlacklist 用户黑名单过滤器结构体
 type UserBlacklist struct {
-	filter *Cuckoo.CuckooFilter // 布谷鸟过滤器实例
-	db     *gorm.DB             // 数据库连接
-	mu     sync.RWMutex         // 读写锁，保证并发安全
-	config Config               // 配置参数
-	stats  Stats                // 性能统计
+	filter *CuckooFilter // 布谷鸟过滤器实例
+	db     *gorm.DB      // 数据库连接
+	mu     sync.RWMutex  // 读写锁，保证并发安全
+	config Config        // 配置参数
+	stats  Stats         // 性能统计
 }
 
 // Stats 性能统计结构体
@@ -50,7 +50,7 @@ type BlacklistUser struct {
 func NewUserBlacklist(ctx context.Context, config Config) (*UserBlacklist, error) {
 	// 初始化GORM连接，设置日志级别为Info
 	db, err := gorm.Open(mysql.Open(config.MySQLDSN), &gorm.Config{
-		Logger: logger.默认值.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("连接数据库失败: %w", err)
@@ -71,7 +71,7 @@ func NewUserBlacklist(ctx context.Context, config Config) (*UserBlacklist, error
 	}
 
 	// 初始化布谷鸟过滤器
-	cf := Cuckoo.NewCuckooFilter(config.FilterCapacity, config.FalsePositiveRate)
+	cf := NewCuckooFilter(config.FilterCapacity, config.FalsePositiveRate)
 	if cf == nil {
 		return nil, fmt.Errorf("创建过滤器失败")
 	}
@@ -202,7 +202,7 @@ func (ubl *UserBlacklist) checkAndExpand() {
 	if usageRate > 0.8 {
 		// 创建新过滤器，容量翻倍
 		newCapacity := ubl.config.FilterCapacity * 2
-		newFilter := Cuckoo.NewCuckooFilter(newCapacity, ubl.config.FalsePositiveRate)
+		newFilter := NewCuckooFilter(newCapacity, ubl.config.FalsePositiveRate)
 
 		// 从数据库重新加载所有数据到新过滤器
 		var users []BlacklistUser
@@ -227,7 +227,7 @@ func (ubl *UserBlacklist) GetStats() Stats {
 	return ubl.stats
 }
 
-func main() {
+func TestSqlCuckooFilter(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
