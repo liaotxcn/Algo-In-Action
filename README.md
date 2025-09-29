@@ -1,4 +1,4 @@
-# DataStructures-Algorithms Applications of Data Structures and Algorithms 
+# DataStructures-Algorithms The cornerstone of the programming world, analyzing data structures, algorithms, and their applications from beginner to advanced.
 
 <div align="center">  
 
