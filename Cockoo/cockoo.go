@@ -1,4 +1,4 @@
-package Cuckoo
+package main
 
 import (
 	"fmt"
