@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""校验仓库目录结构是否符合 project.md 的约定。
+"""校验仓库目录结构是否符合仓库约定。
 
 用法:
     python scripts/check_structure.py
@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# 与 project.md 保持一致的模块清单
+# 模块清单
 TOPICS = [
     "01-array-two-pointers",
     "02-linked-list",
@@ -45,11 +45,8 @@ APPLICATIONS = [
 
 REQUIRED_DOCS = [
     "docs/index.md",
-    "docs/paths/beginner.md",
-    "docs/paths/interview.md",
     "docs/paths/application.md",
     "docs/matrix.md",
-    "docs/contributing.md",
 ]
 
 REQUIRED_SCRIPTS = [

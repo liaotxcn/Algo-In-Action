@@ -171,7 +171,8 @@ def main(argv: list[str]) -> int:
         return 0
 
     MATRIX_PATH.parent.mkdir(parents=True, exist_ok=True)
-    MATRIX_PATH.write_text(content, encoding="utf-8")
+    with MATRIX_PATH.open("w", encoding="utf-8", newline="\n") as file:
+        file.write(content)
     print(f"已生成 {MATRIX_PATH.relative_to(ROOT).as_posix()}")
     return 0
 
