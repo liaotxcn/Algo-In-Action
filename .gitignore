@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Go
+*.test
+*.out
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+.claude/

@@ -1,0 +1,11 @@
+{
+  "cases": [
+    {"name": "empty", "input": [], "expected": []},
+    {"name": "single", "input": [7], "expected": [7]},
+    {"name": "already_sorted", "input": [1, 2, 3, 4, 5], "expected": [1, 2, 3, 4, 5]},
+    {"name": "reverse_sorted", "input": [5, 4, 3, 2, 1], "expected": [1, 2, 3, 4, 5]},
+    {"name": "with_duplicates", "input": [4, 2, 2, 8, 3, 3, 1], "expected": [1, 2, 2, 3, 3, 4, 8]},
+    {"name": "with_negatives", "input": [3, -1, 0, -5, 2], "expected": [-5, -1, 0, 2, 3]},
+    {"name": "mixed", "input": [64, 34, 25, 12, 22, 11, 90], "expected": [11, 12, 22, 25, 34, 64, 90]}
+  ]
+}

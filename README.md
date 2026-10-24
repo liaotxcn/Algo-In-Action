@@ -1,411 +1,51 @@
-# DataStructures-Algorithms The cornerstone of the programming world, analyzing data structures, algorithms, and their applications from beginner to advanced.
+# Algo-In-Action
 
-<div align="center">  
+English | [简体中文](README.zh-CN.md)
 
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)  
+“Data Structures & Algorithms + Real-World Applications”
 
-</div>  
+Every topic follows the same conventions: documentation, runnable implementations, and automated tests. Topics and application scenarios are cross-linked, forming a closed loop from principles to real-world application.
 
----
+## Getting Started
 
-## 📂 项目结构  
+| Entry | Description |
+| --- | --- |
+| [Documentation Home](docs/index.md) | Browse by learning path and coverage matrix |
+| [Application Path](docs/paths/application.md) | Practical cases such as rate limiting, caching, search, and scheduling |
+| [Coverage Matrix](docs/matrix.md) | Language implementations and test coverage for each topic |
 
-### **Python 版本** 🐍  
-- **`First.py`**  
-  - 基础数据结构实现  
-  - 常用算法模板和实例  
-- **`Second.py`**  
-  - 高级数据结构  
-  - 进阶算法实现、应用案例
+## Directory Structure
 
-### **Golang 版本** 🦫  
-- **`First.go`**  
-  - 基础数据结构(链表、队列、双端队列、栈、集合、图等)
-  - 常用算法(排序、搜索、动态规划等)
-  - 工具实例(字符串处理、切片操作等)
-- **`Second.go`**  
-  - 并发安全数据结构(Map、Slice、Queue等)
-  - Goroutine管理(工作池、优雅退出等模式)
-  - Channel高级模式(Fan-in、Fan-out、超时控制等)
-  - 原子操作与并发原语(计数器、Once等)
-  - 经典并发模式(生产者消费者等)
-- **`Third.go`**  
-  - 高级Goroutine模式、Channel、并发实用
-  - 分片并发安全Map实现(Set、Get、getShard)
-  - 并发安全环形缓冲区(Put、Get)
-  - 动态Worker Pool实现
-  - 高级并发模式(Context、Channel多路复用、限速器、ErrorGroup增强版)
-  - 工具函数实例(FNV32哈希算法实现、并发原语等)
-- **`Cache elimination 缓存淘汰`**
-  - FIFO   按照数据最早进入顺序淘汰数据
-  - LRU    根据数据最近使用情况淘汰数据
-  - LFU    根据数据访问频率来淘汰数据
-  - ARC    LRU + LFU
-- **`Snowflake 高可用雪花`**
-  - Snowflake 雪花算法
-- **`RateLimiting 高效限流`**
-  - RateLimiting 限流算法
-
----
-
-## 缓存淘汰(FIFO、LRU、LFU、ARC)
-### FIFO(先进先出)
-- **原理**：优先淘汰最早进入缓存的数据
-- **实现方式**：使用队列记录数据进入顺序
-- **特点**：
-  - ✅ 实现简单，内存开销低  
-  - ❌ 可能误删高频访问的早期数据
-- **示例**（容量=3）：  
-  访问序列：A → B → C → A → D  
-  淘汰顺序：B（最早进入且未重复访问）
-![image](https://github.com/user-attachments/assets/fe7b6a29-a622-4471-8267-7d2afb419c8f)
-
-### LRU(最近最少使用)
-- **原理**：淘汰最久未被访问的数据
-- **实现方式**：哈希表+双向链表（O(1)复杂度）
-- **特点**：
-  - ✅ 符合时间局部性原理  
-  - ❌ 突发流量可能挤出热点数据
-- **示例**（容量=3）：  
-  访问序列：A → B → C → A → D → B → E  
-  淘汰顺序：C（最久未访问）→ A → D
-![image](https://github.com/user-attachments/assets/6a1fc97e-e35e-4b10-bad7-646642013ca9)
-
-### LFU(最不经常使用)
-- **原理**：淘汰访问频率最低的数据（频率相同则按LRU）
-- **实现方式**：最小堆/多层链表+频率哈希表
-- **特点**：
-  - ✅ 适合长期热点场景  
-  - ❌ 容易积累"缓存污染"数据
-- **示例**（容量=2）：  
-  访问序列：A → A → B → A → C → B → C  
-  淘汰顺序：B（频率1）→ A（频率3保留）
-![image](https://github.com/user-attachments/assets/fa84f11a-35bb-4379-ada2-f6c06922946b)
-
-### ARC(自适应替换缓存)
-- **原理**：动态平衡LRU和LFU策略
-- **实现方式**：维护4个队列（T1/T2/B1/B2）
-- **特点**：
-  - ✅ 自适应各种访问模式  
-  - ❌ 实现复杂，内存占用高
-- **工作模式**：根据命中率自动调整LRU/LFU权重
-![image](https://github.com/user-attachments/assets/ebe32488-0c6b-4886-8770-fa54ea3ac42e)
-
-### 对比
-| 算法     | 时间复杂度 | 空间复杂度 | 最佳适用场景         |
-|----------|------------|------------|----------------------|
-| FIFO     | O(1)       | O(n)       | 顺序访问场景         |
-| LRU      | O(1)       | O(n)       | 短期热点数据         |
-| LFU      | O(log n)   | O(n)       | 长期稳定热点         |
-| ARC      | O(1)       | O(n)       | 复杂多变访问模式     |
-
-### 选型
-- **低成本实现**：FIFO
-- **通用场景**：LRU（Redis默认策略(改进LRU)）
-- **稳定热点**：LFU
-- **高性能系统**：ARC（数据库缓存常用）
-## Redis改进版LRU、LFU
-### LRU
-- 传统LRU算法基于链表实现，链表中元素按照顺序从前到后排列，最新操作的键会被移动到表头，进行内存淘汰时，则删除链表尾部元素(即最久未被使用的元素)
-- 传统LRU弊端1：需要用链表管理所有缓存数据，带来额外空间开销
-- 传统LRU弊端2：当有数据被访问时，需在链表上将该数据移动到表头位置，若有大量数据被访问，就会带来大量的链表移动操作，时间耗费长，进而降低Redis缓存性能
-- Redis改进LRU算法：在Redis对象结构体中添加一个额外的字段，用于记录此数据最后一次访问时间，进行内存淘汰时，采用随机采样（默认取5个键）而非全局排序，从中淘汰最久未使用的键，以减少性能开销
-- 配置参数：maxmemory-policy allkeys-lru（所有键参与淘汰）
-           maxmemory-policy volatile-lru（仅带过期时间的键参与淘汰）
-- 优点：不用为所有数据维护一个大表链，节省空间占用；不用在每次数据访问时都移动链表项，提升缓存性能，适合大多数访问模式(如热点数据场景)
-- 存在无法解决缓存污染的问题(一次读取大量数据，且只会被读取一次，大量数据长时间留存Redis)
-### LFU
-- 频率统计：基于计数器（Morris 计数器）近似统计访问频率，节省内存
-- 衰减机制：计数器随时间衰减（通过 lfu-decay-time 配置），避免旧数据长期占据内存
-- 配置参数：maxmemory-policy allkeys-lfu 或 volatile-lfu
-           lfu-log-factor 调整计数器增长速率（值越大，区分低频访问越精细）
-- 优点：更适合长尾访问分布（如某些数据偶尔访问但不应保留）
-- 对突发访问敏感，新数据可能因初始频率低被误删
-### 场景选择
-- LRU：适合有明显热点数据的场景（如用户近期访问记录）
-- LFU：适合访问模式均匀或需要长期频率统计的场景（如缓存广告数据）
-- 其他策略：若无需精确淘汰，可结合 TTL（如 volatile-ttl）或随机淘汰（allkeys-random）
-```bash
-# 使用 LFU 淘汰所有键
-maxmemory-policy allkeys-lfu
-lfu-log-factor 10
-lfu-decay-time 1
-
-# 使用 LRU 淘汰仅带过期时间的键
-maxmemory-policy volatile-lru
+```text
+Algo-In-Action/
+├── docs/          # Topic paths, coverage matrix
+├── topics/        # Core learning content
+├── applications/  # Real-world applications
+├── shared/        # Shared test data and utilities across topics
+└── scripts/       # Structure validation, matrix generation, and test aggregation
 ```
-- 采样数量：通过 maxmemory-samples 调整 LRU/LFU 的采样精度（增加样本数提高准确性，但消耗更多CPU）
-- 混合策划：Redis 6.2+ 支持 volatile-lfu 和 volatile-lru 对带过期时间的键灵活控制
 
----
+## Local Verification
 
-## 雪花算法
-雪花算法(Snowflake)是一种分布式ID生成算法，用于在分布式系统中生成全局唯一且有序的ID
-### 特点
-- 唯一性：在分布式环境下生成的ID不会重复
-- 有序性：生成的ID随时间递增
-- 高性能：本地生成，不依赖数据库等外部系统
-### 生成ID结构
-典型的雪花算法生成的64位ID由以下几部分组成
+Requirements: Go 1.26+, Python 3.11+, pytest
+
 ```bash
-0 - 0000000000 0000000000 0000000000 0000000000 0 - 00000 - 00000 - 000000000000
+python -m pip install pytest
+bash scripts/run_all_tests.sh
 ```
-- 1位符号位：始终为0，表示正数
-- 41位时间戳：记录当前时间与自定义起始时间的差值（毫秒级）
-- 10位工作机器ID：5位数据中心ID + 5位机器ID
-- 12位序列号：同一毫秒内的序列号
-### 业务应用
-- 分布式系统主键生成：数据库主键、消息ID等
-- 订单号生成：电商、支付等业务
-- 日志追踪ID：分布式系统调用链追踪
-- 社交网络中的帖子/评论ID：如微博、Twitter等
-### 注意事项
-- 时钟回拨问题：如果系统时间被回调，可能导致ID重复
-- workerID分配：需要确保不同机器的workerID不重复
-- 起始时间选择：epoch的选择影响ID的有效期（41位时间戳大约可用69年）
 
----
+You can also run individual checks:
 
-## 限流算法
-限流算法（Rate Limiting Algorithms）用于控制系统的请求处理速率，防止过载，保障服务的稳定性和公平性
-### 固定窗口计数器(Fixed window counter)
-- 原理：将时间划分为固定窗口（如1分钟），统计每个窗口内的请求数，超过阈值则拒绝请求
-- 优点：实现简单，内存占用少
-- 缺点：窗口边界可能突发流量（如窗口切换时瞬间涌入大量请求）
-  ![image](https://github.com/user-attachments/assets/9148ddae-c352-403e-a9cb-d925cc773b04)
+```bash
+python scripts/check_structure.py   # Validate directory conventions
+python scripts/gen_matrix.py        # Regenerate docs/matrix.md
+go test ./...                       # Run Go tests
+python -m pytest -q                 # Run Python tests
+```
 
-### 滑动窗口计数器(Sliding window counter)
-- 原理：记录请求的时间戳，统计当前时间向前滑动窗口（如1分钟）内的请求数
-- 精确版：保存所有请求时间戳（精确但耗内存）
-- 近似版：使用小窗口分段统计（如将1分钟分为6个10秒窗口，牺牲精度换性能）
-- 优点：平滑限流，避免固定窗口的边界问题
-- 缺点：实现较复杂，内存或计算成本较高
-![image](https://github.com/user-attachments/assets/e4bcb554-1ac6-40d7-bacd-013c155bab3b)
+## Content Conventions
 
-### 漏桶算法(Leaky bucket)
-- 原理：请求以任意速率进入桶，以恒定速率流出（如每秒10次）。桶满则拒绝请求
-- 优点：平滑输出流量，避免突发压力
-- 缺点：无法应对短时突发流量（即使系统有空闲资源也会限流）
-- 场景：适合需要严格控制处理速率的场景（如消息队列）
-### 令牌桶算法(Token bucket)
-- 原理：桶以固定速率生成令牌（如每秒5个）、请求需获取令牌，无令牌则被限流、桶有最大容量，允许短时突发（如桶容量10，瞬间消耗10令牌）
-- 优点：兼顾平滑限流和突发流量处理
-- 缺点：需维护令牌生成和桶状态
-- 场景：API限流（如AWS、Google Cloud的限流服务）
-![image](https://github.com/user-attachments/assets/fbbfafdd-99f8-4cdc-8eb9-6de276faa16c)
-
-### 自适应限流
-- 原理：动态调整阈值，基于系统指标（如CPU、延迟、错误率）实时反馈
-- 实例：TCP拥塞控制（类似慢启动、拥塞避免机制）、梯度下降（根据错误率调整限流阈值）
-- 优点：灵活应对流量波动，最大化资源利用率
-- 缺点：实现复杂，需监控系统状态
-### 分布式限流
-- 实例：集群中全局共享限流状态（如N个节点共享每秒1000次请求）
-- Redis + Lua 集中存储计数，原子操作（如INCR+EXPIRE）
-- 分片：每个节点负责部分限流，汇总结果
-- 一致性哈希：减少节点变化的影响
-### 对比
-| 算法                | 原理                                                                 | 优点                          | 缺点                                  | 适用场景                     |
-|---------------------|----------------------------------------------------------------------|-------------------------------|---------------------------------------|------------------------------|
-| **固定窗口计数器**  | 按固定时间窗口（如1分钟）计数，超限则拒绝请求。                      | 实现简单，内存占用低。        | 窗口边界可能突发流量（如请求翻倍）。  | 简单限流，允许一定误差。      |
-| **滑动窗口计数器**  | 统计滑动时间窗口（如最近1分钟）内的请求数，超限则拒绝。               | 比固定窗口更平滑，限流更精确。| 实现复杂，内存或计算成本较高。        | 高精度限流（如API网关）。     |
-| **漏桶算法**        | 请求以任意速率进入桶，以恒定速率流出（如每秒10次），桶满则拒绝。      | 输出流量绝对平滑。            | 无法处理突发流量，即使系统有空闲资源。| 消息队列、流量整形。          |
-| **令牌桶算法**      | 桶以固定速率生成令牌，请求需消耗令牌，无令牌则限流，允许短时突发。    | 兼顾平滑限流和突发流量处理。  | 需维护令牌生成逻辑。                  | 云API限流（如AWS、Google）。  |
-| **自适应限流**      | 动态调整限流阈值，基于系统指标（CPU、延迟等）实时反馈。               | 灵活，最大化资源利用率。      | 实现复杂，需监控系统状态。            | 高动态负载场景（如微服务）。  |
-| **分布式限流**      | 通过共享存储（如Redis）协调多节点的全局限流状态。                     | 支持集群统一限流。            | 依赖外部存储，可能有性能瓶颈。        | 分布式系统（如微服务集群）。  |
-### 业务选择
-- **简单需求**：固定窗口或令牌桶
-- **高精度限流**：滑动窗口
-- **绝对平滑流量**：漏桶
-- **突发流量+资源利用**：令牌桶或自适应
-- **分布式系统**：Redis + 令牌桶/滑动窗口
-
----
-
-## 布隆过滤器(Bloom Filter)
-
-### 概述
-布隆过滤器是Howard Bloom在1970年提出的二进制向量数据结构，具有很高的空间和时间效率。它用于判断一个元素是否在集合中，特点是：
-- 如果检测结果为"否"，该元素**绝对不存在**于集合中(100%准确)
-- 如果检测结果为"是"，该元素**可能存在**(有一定误判率)
-
-### 核心原理
-布隆过滤器由以下两部分组成：
-1. **位数组(bit array)**：长度为m的二进制向量
-2. **哈希函数**：k个不同的哈希函数
-3. **示例**: 下图表示有三个hash函数，比如一个集合中有x，y，z三个元素，分别用三个hash函数映射到二进制序列的某些位上，假设我们判断w是否在集合中，同样用三个hash函数来映射，结果发现取得的结果不全为1，则表示w不在集合里面
-![image](https://github.com/user-attachments/assets/db0804b1-32f3-4e8b-adc6-9e53577e0263)
-4. **插入数据**：插入了两个元素，X和Y，X的两次hash取模后的值分别为4,9，因此，4和9位被置成1；Y的两次hash取模后的值分别为14和19，因此，14和19位被置成1
-![image](https://github.com/user-attachments/assets/c64b719d-bc4b-42cb-bb3b-7c459b047102)
-- 插入流程：将要添加的元素给k个哈希函数 --> 得到对应于位数组上的k个位置 --> 将这k个位置设为1
-6. **查找数据**：BloomFilter中查找一个元素，会使用和插入过程中相同的k个hash函数，取模后，取出每个bit对应的值，如果所有bit都为1，则返回元素可能存在，否则，返回元素不存在
-- 查找流程：将要查询的元素给k个哈希函数 --> 得到对应于位数组上的k个位置 --> 如果k个位置有一个为0，则一定不在集合中 --> 如果k个位置全部为1，则可能在集合中
-7. **为何不能删除数据**：BloomFilter中不允许有删除操作，因为删除后，可能会造成原来存在的元素返回不存在，这个是不允许的
-![image](https://github.com/user-attachments/assets/0778ea32-c435-4ab3-a698-14e6f126c00b)
-- 刚开始时，有元素X，Y和Z，其hash的bit如图中所示，当删除X后，会把bit 4和9置成0，这同时会造成查询Z时，报不存在的问题，这对于BloomFilter来讲是不能容忍的，因为它要么返回绝对不存在，要么返回可能存在（BloomFilter中不允许删除的机制会导致其中的无效元素可能会越来越多，即实际已经在磁盘删除中的元素，但在bloomfilter中还认为可能存在，这会造成越来越多的false positive）
-
-### 工作流程
-1. **添加元素**：
-   - 对元素进行k次哈希计算，得到k个哈希值
-   - 将位数组中对应的k个位置设为1
-
-2. **查询元素**：
-   - 对元素进行k次哈希计算
-   - 检查位数组中对应的k个位置是否都为1
-   - 如果都为1，则"可能存在"；如果有任一为0，则"绝对不存在"
-
-### 应用场景
-1. **防止缓存击穿**：快速判断请求数据是否在缓存中
-2. **垃圾邮件过滤**：快速判断邮件是否为垃圾邮件
-3. **爬虫URL去重**：判断URL是否已被爬取
-4. **IP黑名单**：快速判断IP是否在黑名单中
-5. **比特币交易查询**：快速验证交易是否存在
-6. **数据库查询优化**：减少不必要的磁盘查询
-
-### 特性及优缺
-
-### 优点
-| 特性 | 说明 |
-|------|------|
-| 空间效率 | 相比哈希表等数据结构更节省空间 |
-| 查询效率 | O(k)时间复杂度，k为哈希函数数量 |
-| 可扩展性 | 可以动态调整大小和哈希函数数量 |
-| 并行处理 | 支持并行添加和查询操作 |
-
-### 缺点
-| 限制 | 说明 |
-|------|------|
-| 误判率 | 存在一定的假阳性概率 |
-| 不支持删除 | 标准布隆过滤器不支持删除操作 |
-| 参数敏感 | 性能高度依赖参数选择 |
-| 哈希依赖 | 哈希函数的质量直接影响性能 |
-
-### 参数选择
-1. **位数组大小m**：`m = -n*ln(p)/(ln2)^2`
-   - n: 预期元素数量
-   - p: 期望的误判率
-2. **哈希函数数量k**：`k = m/n * ln2`
-
-### 性能优化建议
-1. 使用高质量的哈希函数（如MurmurHash）
-2. 根据实际场景调整误判率参数
-3. 考虑使用可删除的变种（如Counting Bloom Filter）
-4. 对于大规模数据，考虑分布式实现
-
-### 业务应用
-### Bloom Filter + MySQL
-- 作为查询前置过滤器，减少数据库压力
-- 适合判断数据是否"绝对不存在"
-- 示例：注册时高效判断用户名是否已被占用
-### Bloom Filter + Redis
-- 原生支持布隆过滤器模块(RedisBloom)
-- 适合缓存层快速判断，防止缓存穿透
-- 内存数据库特性与布隆过滤器完美契合
-- 示例：防止恶意查询不存在的key
-
-| 特性         | Redis布隆过滤器               | MySQL布隆过滤器               |
-|--------------|----------------------------------|----------------------------------|
-| 性能         | 极高(微秒级)                    | 较高(需网络IO)                  |
-| 持久化       | 依赖Redis持久化                 | 需自行实现                      |
-| 适用场景     | 高频读取/缓存相关               | 数据持久化/复杂查询             |
-| 部署复杂度   | 简单(Redis模块)                 | 中等(需应用层集成)              |
-
-### 生产环境同时使用
-- MySQL布隆过滤器保证数据持久性
-- Redis布隆过滤器处理高频缓存查询
-
-### 短视频瀑布流优化
-- 每一次刷新都会根据推荐算法推荐新的内容，个新的内容不能与已经出现过的内容重复，可以使用布隆过滤器来去重
-- 场景共通点：如何查看一个东西是否在有大量数据的池子里面
-- 法1：使用 Redis Set 将每个用户看过的feedsid，推荐系统要推出 new feeds 时，在Set中check看是否存在，若存在则过滤掉该条feeds（海量用户数据场景下，成本高，查询效率较低）
-- 法2：使用Bloom Filter，更适合于海量数据过滤
-- bloom中存的摘要，而不是原始数据data，空间占用远低于set占用
-- bloom无法删除数据、无法扩展大小、存在误判可能
-- 实现：须合理选择 bloom 过滤器规格，bloom bit 数组太小，则误判率过高；bloom bit 数组太大，则过于浪费存储
-- 最优实践：记录1个总数量的 bloom key，分级，递增设置容量。例如起始 bf0 容量是 1000，当 bf0 满了，新建一个 bf1，容量是 10000，bf1 满了，再新建一个 bf2，容量是 10w。这种方案有两个好处，1是递进的增加 bf 容量，减少 Redis 的 key 访问次数，减轻 Redis 的压力；2是不浪费存储，大部分用户都是非活跃用户，可能看到的 feeds 量在 1w 以内，只有真正活跃的用户才会分配 10w 以上的大 bf，精准的占用存储
-![image](https://github.com/user-attachments/assets/c6617c51-4999-480d-96af-c93285c5f686)
-
-## 布谷鸟过滤器(Cuckoo Filter)
-
-### 布谷鸟哈希
-布谷鸟哈希是2001 年由Rasmus Pagh 和Flemming Friche Rodler 提出。本质上来说它为解决哈希冲突提供了另一种策略，利用较少计算换取了较大空间。它具有占用空间小、查询迅速等特性，最原始的布谷鸟哈希方法即使用两个哈希函数对一个key进行哈希，得到桶中的两个位置
-- 如果两个位置都为为空则将key随机存入其中一个位置
-- 如果只有一个位置为空则存入为空的位置
-- 如果都不为空，则随机踢出一个元素，踢出的元素再重新计算哈希找到相应的位置
-- 假如存在绝对的空间不足，一般会设置一个踢出阈值，如果在某次插入行为过程中连续踢出超过阈值，则进行扩容
-![image](https://github.com/user-attachments/assets/1fb345b2-0821-4e68-85e1-aa2589a2d5b0)
-
-### 核心结构
-- 哈希表（桶数组）：由多个桶（bucket）组成，每个桶包含多个槽位（通常为4个）
-- 指纹（Fingerprint）：存储元素的压缩信息（如短哈希值），通常占用少量比特（例如8-12 bits）
-
-### 插入原理
-- 计算指纹：对元素 x 计算指纹 f = fingerprint(x)
-- 计算两个候选桶位置：桶1-h1 = hash(x)、桶2-h2 = h1 ⊕ hash(f)(异或操作确保指纹可反向定位)
-
-### 插入规则
-- 若桶1或桶2有空槽，直接插入指纹 f
-- 若均满，随机踢出桶1或桶2中的一个指纹 f'，插入 f，并为被踢出的 f' 重新计算其另一个候选桶（类似布谷鸟哈希的“踢出”机制）
-- 重复上述过程，直到达到最大踢出次数（如500次），此时判定插入失败（过滤器可能过满）
-
-### 查询原理
-- 计算 f = fingerprint(x) 及两个候选桶 h1 和 h2
-- 检查桶 h1 和 h2 中是否存在指纹 f （若任一桶中存在 f，则判定 x 可能存在（存在假阳性）、若均不存在，则 x 一定不存在）
-
-### 删除原理
-- 计算 f、h1 和 h2
-- 检查两个桶中是否有 f （若找到，删除其中一个 f（每个指纹只需存储一次）、若未找到，说明元素不存在（无假阴性））
-
-### 业务应用
-### SQL系统
-- 快速判断某个键是否再数据库中
-- 减少不必要的磁盘I/O操作
-### 分布式/微服务
-- 缓存中判断高效判断数据是否存在
-- 减少节点间的通信开销
-### 海量数据
-- MapReduce作业快速去重
-- 流数据处理重复检测(MQ)
-### 存储
-- LSM树等存储引擎中的布隆过滤器替代方案
-- 提供比传统布隆过滤器更好的空间效率和查询性能
-
-### 对比布隆的优势
-### 支持删除操作
-- 高效删除元素
-- 通过存储元素的指纹(fingerprint)而非简单的位标记实现
-### 空间效率
-- 相同误报率下，布谷鸟过滤器通常需要更少的内存空间
-- 特别是当误报率较低时(<3%)，优势更加明显
-### 误报率
-- 对于相同大小的内存，布谷鸟过滤器通常能提供更低的误报率
-- 布谷鸟过滤器的误报率约为1/(2^fingerprint_size)
-### 查询速度
-- 通常只需要检查2个桶(每个桶4个条目)
-- 布隆过滤器需要检查多个哈希函数对应的位
-### 动态容量调整
-- 更高效快捷进行动态调整容量
-- 通过踢出(cuckoo kicking)机制自动处理冲突
-### 缓存局部性
-- 内存访问模式更友好
-- 通常只需要检查少量连续的内存位置
-
-### 概率过滤器核心指标比对
-| 过滤器类型             | 空间效率 | 查询速度 | 支持删除 | 动态扩展 | 假阳性率       | 适用场景                     |
-|------------------------|----------|----------|----------|----------|----------------|------------------------------|
-| **布隆过滤器**         | 中       | 快       | ❌       | ❌       | 中等（可调节） | 静态集合、缓存击穿防护       |
-| **计数布隆过滤器**     | 低       | 快       | ✅       | ❌       | 中等           | 需要删除的动态集合           |
-| **布谷鸟过滤器**       | 高       | 极快     | ✅       | ❌       | 低             | 高并发、需删除的动态集合     |
-| **Xor过滤器**          | 极高     | 极快     | ❌       | ❌       | 低             | 只读或低频更新的静态集合     |
-| **商过滤器**           | 高       | 快       | ✅       | ❌       | 低             | 高负载因子、需删除的场景     |
-| **分层布隆过滤器**     | 中       | 中       | ❌       | ✅       | 中等           | 数据量持续增长的场景         |
-| **Golomb-Coded Sets**  | 极高     | 慢       | ❌       | ❌       | 零（完美哈希） | 静态数据集（如只读字典）     |
-
-### 场景化推荐
-- **静态数据** → `Xor Filter`  
-- **动态数据+删除** → `Cuckoo Filter`  
-- **内存极端受限** → `Golomb-Coded Sets`（静态）或 `Cuckoo Filter`（动态）  
-- **需动态扩容** → `Scalable Bloom Filter`
-
-### <div align="center"> <strong>✨ 持续更新完善中... ✨</strong> </div>
+- Topic implementations: `topics/<nn-topic>/go/solution.go` and `python/solution.py`
+- Topic tests: `solution_test.go` and `test_solution.py`
+- Application implementations: organized by language under `applications/<nn-app>/`
+- Run structure validation and matrix generation after adding or adjusting modules

@@ -1,0 +1,13 @@
+{
+  "max_area": [
+    {"name": "classic", "height": [1, 8, 6, 2, 5, 4, 8, 3, 7], "expected": 49},
+    {"name": "two_bars", "height": [1, 1], "expected": 1},
+    {"name": "empty", "height": [], "expected": 0}
+  ],
+  "rotate": [
+    {"name": "k_less_than_n", "nums": [1, 2, 3, 4, 5, 6, 7], "k": 3, "expected": [5, 6, 7, 1, 2, 3, 4]},
+    {"name": "k_equals_n", "nums": [1, 2, 3], "k": 3, "expected": [1, 2, 3]},
+    {"name": "k_greater_than_n", "nums": [1, 2], "k": 5, "expected": [2, 1]},
+    {"name": "empty", "nums": [], "k": 2, "expected": []}
+  ]
+}
