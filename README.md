@@ -1,190 +1,51 @@
-# Probabilistic-Filters - In-depth analysis of the engineering application examples and performance optimization of data filters in SQL and Redis
+# Algo-In-Action
 
----
+English | [简体中文](README.zh-CN.md)
 
-# 布隆过滤器(Bloom Filter)
+“Data Structures & Algorithms + Real-World Applications”
 
-## 概述
-布隆过滤器是Howard Bloom在1970年提出的二进制向量数据结构，具有很高的空间和时间效率。它用于判断一个元素是否在集合中，特点是：
-- 如果检测结果为"否"，该元素**绝对不存在**于集合中(100%准确)
-- 如果检测结果为"是"，该元素**可能存在**(有一定误判率)
+Every topic follows the same conventions: documentation, runnable implementations, and automated tests. Topics and application scenarios are cross-linked, forming a closed loop from principles to real-world application.
 
-## 核心原理
-布隆过滤器由以下两部分组成：
-1. **位数组(bit array)**：长度为m的二进制向量
-2. **哈希函数**：k个不同的哈希函数
-3. **示例**: 下图表示有三个hash函数，比如一个集合中有x，y，z三个元素，分别用三个hash函数映射到二进制序列的某些位上，假设我们判断w是否在集合中，同样用三个hash函数来映射，结果发现取得的结果不全为1，则表示w不在集合里面
-![image](https://github.com/user-attachments/assets/db0804b1-32f3-4e8b-adc6-9e53577e0263)
-4. **插入数据**：插入了两个元素，X和Y，X的两次hash取模后的值分别为4,9，因此，4和9位被置成1；Y的两次hash取模后的值分别为14和19，因此，14和19位被置成1
-![image](https://github.com/user-attachments/assets/c64b719d-bc4b-42cb-bb3b-7c459b047102)
-- 插入流程：将要添加的元素给k个哈希函数 --> 得到对应于位数组上的k个位置 --> 将这k个位置设为1
-6. **查找数据**：BloomFilter中查找一个元素，会使用和插入过程中相同的k个hash函数，取模后，取出每个bit对应的值，如果所有bit都为1，则返回元素可能存在，否则，返回元素不存在
-- 查找流程：将要查询的元素给k个哈希函数 --> 得到对应于位数组上的k个位置 --> 如果k个位置有一个为0，则一定不在集合中 --> 如果k个位置全部为1，则可能在集合中
-7. **为何不能删除数据**：BloomFilter中不允许有删除操作，因为删除后，可能会造成原来存在的元素返回不存在，这个是不允许的
-![image](https://github.com/user-attachments/assets/0778ea32-c435-4ab3-a698-14e6f126c00b)
-- 刚开始时，有元素X，Y和Z，其hash的bit如图中所示，当删除X后，会把bit 4和9置成0，这同时会造成查询Z时，报不存在的问题，这对于BloomFilter来讲是不能容忍的，因为它要么返回绝对不存在，要么返回可能存在（BloomFilter中不允许删除的机制会导致其中的无效元素可能会越来越多，即实际已经在磁盘删除中的元素，但在bloomfilter中还认为可能存在，这会造成越来越多的false positive）
+## Getting Started
 
-### 工作流程
-1. **添加元素**：
-   - 对元素进行k次哈希计算，得到k个哈希值
-   - 将位数组中对应的k个位置设为1
+| Entry | Description |
+| --- | --- |
+| [Documentation Home](docs/index.md) | Browse by learning path and coverage matrix |
+| [Application Path](docs/paths/application.md) | Practical cases such as rate limiting, caching, search, and scheduling |
+| [Coverage Matrix](docs/matrix.md) | Language implementations and test coverage for each topic |
 
-2. **查询元素**：
-   - 对元素进行k次哈希计算
-   - 检查位数组中对应的k个位置是否都为1
-   - 如果都为1，则"可能存在"；如果有任一为0，则"绝对不存在"
+## Directory Structure
 
-## 应用场景
-1. **防止缓存击穿**：快速判断请求数据是否在缓存中
-2. **垃圾邮件过滤**：快速判断邮件是否为垃圾邮件
-3. **爬虫URL去重**：判断URL是否已被爬取
-4. **IP黑名单**：快速判断IP是否在黑名单中
-5. **比特币交易查询**：快速验证交易是否存在
-6. **数据库查询优化**：减少不必要的磁盘查询
+```text
+Algo-In-Action/
+├── docs/          # Topic paths, coverage matrix
+├── topics/        # Core learning content
+├── applications/  # Real-world applications
+├── shared/        # Shared test data and utilities across topics
+└── scripts/       # Structure validation, matrix generation, and test aggregation
+```
 
-## 特性及优缺
+## Local Verification
 
-### 优点
-| 特性 | 说明 |
-|------|------|
-| 空间效率 | 相比哈希表等数据结构更节省空间 |
-| 查询效率 | O(k)时间复杂度，k为哈希函数数量 |
-| 可扩展性 | 可以动态调整大小和哈希函数数量 |
-| 并行处理 | 支持并行添加和查询操作 |
+Requirements: Go 1.26+, Python 3.11+, pytest
 
-### 缺点
-| 限制 | 说明 |
-|------|------|
-| 误判率 | 存在一定的假阳性概率 |
-| 不支持删除 | 标准布隆过滤器不支持删除操作 |
-| 参数敏感 | 性能高度依赖参数选择 |
-| 哈希依赖 | 哈希函数的质量直接影响性能 |
+```bash
+python -m pip install pytest
+bash scripts/run_all_tests.sh
+```
 
-## 参数选择
-1. **位数组大小m**：`m = -n*ln(p)/(ln2)^2`
-   - n: 预期元素数量
-   - p: 期望的误判率
-2. **哈希函数数量k**：`k = m/n * ln2`
+You can also run individual checks:
 
-## 性能优化建议
-1. 使用高质量的哈希函数（如MurmurHash）
-2. 根据实际场景调整误判率参数
-3. 考虑使用可删除的变种（如Counting Bloom Filter）
-4. 对于大规模数据，考虑分布式实现
+```bash
+python scripts/check_structure.py   # Validate directory conventions
+python scripts/gen_matrix.py        # Regenerate docs/matrix.md
+go test ./...                       # Run Go tests
+python -m pytest -q                 # Run Python tests
+```
 
-## 业务应用
-### Bloom Filter + MySQL
-- 作为查询前置过滤器，减少数据库压力
-- 适合判断数据是否"绝对不存在"
-- 示例：注册时高效判断用户名是否已被占用
-### Bloom Filter + Redis
-- 原生支持布隆过滤器模块(RedisBloom)
-- 适合缓存层快速判断，防止缓存穿透
-- 内存数据库特性与布隆过滤器完美契合
-- 示例：防止恶意查询不存在的key
+## Content Conventions
 
-| 特性         | Redis布隆过滤器               | MySQL布隆过滤器               |
-|--------------|----------------------------------|----------------------------------|
-| 性能         | 极高(微秒级)                    | 较高(需网络IO)                  |
-| 持久化       | 依赖Redis持久化                 | 需自行实现                      |
-| 适用场景     | 高频读取/缓存相关               | 数据持久化/复杂查询             |
-| 部署复杂度   | 简单(Redis模块)                 | 中等(需应用层集成)              |
-
-### 生产环境同时使用
-- MySQL布隆过滤器保证数据持久性
-- Redis布隆过滤器处理高频缓存查询
-
-### 短视频瀑布流优化
-- 每一次刷新都会根据推荐算法推荐新的内容，个新的内容不能与已经出现过的内容重复，可以使用布隆过滤器来去重
-- 场景共通点：如何查看一个东西是否在有大量数据的池子里面
-- 法1：使用 Redis Set 将每个用户看过的feedsid，推荐系统要推出 new feeds 时，在Set中check看是否存在，若存在则过滤掉该条feeds（海量用户数据场景下，成本高，查询效率较低）
-- 法2：使用Bloom Filter，更适合于海量数据过滤
-- bloom中存的摘要，而不是原始数据data，空间占用远低于set占用
-- bloom无法删除数据、无法扩展大小、存在误判可能
-- 实现：须合理选择 bloom 过滤器规格，bloom bit 数组太小，则误判率过高；bloom bit 数组太大，则过于浪费存储
-- 最优实践：记录1个总数量的 bloom key，分级，递增设置容量。例如起始 bf0 容量是 1000，当 bf0 满了，新建一个 bf1，容量是 10000，bf1 满了，再新建一个 bf2，容量是 10w。这种方案有两个好处，1是递进的增加 bf 容量，减少 Redis 的 key 访问次数，减轻 Redis 的压力；2是不浪费存储，大部分用户都是非活跃用户，可能看到的 feeds 量在 1w 以内，只有真正活跃的用户才会分配 10w 以上的大 bf，精准的占用存储
-![image](https://github.com/user-attachments/assets/c6617c51-4999-480d-96af-c93285c5f686)
-
-# 布谷鸟过滤器(Cuckoo Filter)
-
-## 布谷鸟哈希
-布谷鸟哈希是2001 年由Rasmus Pagh 和Flemming Friche Rodler 提出。本质上来说它为解决哈希冲突提供了另一种策略，利用较少计算换取了较大空间。它具有占用空间小、查询迅速等特性，最原始的布谷鸟哈希方法即使用两个哈希函数对一个key进行哈希，得到桶中的两个位置
-- 如果两个位置都为为空则将key随机存入其中一个位置
-- 如果只有一个位置为空则存入为空的位置
-- 如果都不为空，则随机踢出一个元素，踢出的元素再重新计算哈希找到相应的位置
-- 假如存在绝对的空间不足，一般会设置一个踢出阈值，如果在某次插入行为过程中连续踢出超过阈值，则进行扩容
-![image](https://github.com/user-attachments/assets/1fb345b2-0821-4e68-85e1-aa2589a2d5b0)
-
-## 核心结构
-- 哈希表（桶数组）：由多个桶（bucket）组成，每个桶包含多个槽位（通常为4个）
-- 指纹（Fingerprint）：存储元素的压缩信息（如短哈希值），通常占用少量比特（例如8-12 bits）
-
-## 插入原理
-- 计算指纹：对元素 x 计算指纹 f = fingerprint(x)
-- 计算两个候选桶位置：桶1-h1 = hash(x)、桶2-h2 = h1 ⊕ hash(f)(异或操作确保指纹可反向定位)
-
-## 插入规则
-- 若桶1或桶2有空槽，直接插入指纹 f
-- 若均满，随机踢出桶1或桶2中的一个指纹 f'，插入 f，并为被踢出的 f' 重新计算其另一个候选桶（类似布谷鸟哈希的“踢出”机制）
-- 重复上述过程，直到达到最大踢出次数（如500次），此时判定插入失败（过滤器可能过满）
-
-## 查询原理
-- 计算 f = fingerprint(x) 及两个候选桶 h1 和 h2
-- 检查桶 h1 和 h2 中是否存在指纹 f （若任一桶中存在 f，则判定 x 可能存在（存在假阳性）、若均不存在，则 x 一定不存在）
-
-## 删除原理
-- 计算 f、h1 和 h2
-- 检查两个桶中是否有 f （若找到，删除其中一个 f（每个指纹只需存储一次）、若未找到，说明元素不存在（无假阴性））
-
-## 业务应用
-### SQL系统
-- 快速判断某个键是否再数据库中
-- 减少不必要的磁盘I/O操作
-### 分布式/微服务
-- 缓存中判断高效判断数据是否存在
-- 减少节点间的通信开销
-### 海量数据
-- MapReduce作业快速去重
-- 流数据处理重复检测(MQ)
-### 存储
-- LSM树等存储引擎中的布隆过滤器替代方案
-- 提供比传统布隆过滤器更好的空间效率和查询性能
-
-## 对比布隆的优势
-### 支持删除操作
-- 高效删除元素
-- 通过存储元素的指纹(fingerprint)而非简单的位标记实现
-### 空间效率
-- 相同误报率下，布谷鸟过滤器通常需要更少的内存空间
-- 特别是当误报率较低时(<3%)，优势更加明显
-### 误报率
-- 对于相同大小的内存，布谷鸟过滤器通常能提供更低的误报率
-- 布谷鸟过滤器的误报率约为1/(2^fingerprint_size)
-### 查询速度
-- 通常只需要检查2个桶(每个桶4个条目)
-- 布隆过滤器需要检查多个哈希函数对应的位
-### 动态容量调整
-- 更高效快捷进行动态调整容量
-- 通过踢出(cuckoo kicking)机制自动处理冲突
-### 缓存局部性
-- 内存访问模式更友好
-- 通常只需要检查少量连续的内存位置
-
-# 概率过滤器核心指标比对
-| 过滤器类型             | 空间效率 | 查询速度 | 支持删除 | 动态扩展 | 假阳性率       | 适用场景                     |
-|------------------------|----------|----------|----------|----------|----------------|------------------------------|
-| **布隆过滤器**         | 中       | 快       | ❌       | ❌       | 中等（可调节） | 静态集合、缓存击穿防护       |
-| **计数布隆过滤器**     | 低       | 快       | ✅       | ❌       | 中等           | 需要删除的动态集合           |
-| **布谷鸟过滤器**       | 高       | 极快     | ✅       | ❌       | 低             | 高并发、需删除的动态集合     |
-| **Xor过滤器**          | 极高     | 极快     | ❌       | ❌       | 低             | 只读或低频更新的静态集合     |
-| **商过滤器**           | 高       | 快       | ✅       | ❌       | 低             | 高负载因子、需删除的场景     |
-| **分层布隆过滤器**     | 中       | 中       | ❌       | ✅       | 中等           | 数据量持续增长的场景         |
-| **Golomb-Coded Sets**  | 极高     | 慢       | ❌       | ❌       | 零（完美哈希） | 静态数据集（如只读字典）     |
-
-## 场景化推荐
-- **静态数据** → `Xor Filter`  
-- **动态数据+删除** → `Cuckoo Filter`  
-- **内存极端受限** → `Golomb-Coded Sets`（静态）或 `Cuckoo Filter`（动态）  
-- **需动态扩容** → `Scalable Bloom Filter`
-
-### 持续更新中...  
+- Topic implementations: `topics/<nn-topic>/go/solution.go` and `python/solution.py`
+- Topic tests: `solution_test.go` and `test_solution.py`
+- Application implementations: organized by language under `applications/<nn-app>/`
+- Run structure validation and matrix generation after adding or adjusting modules
